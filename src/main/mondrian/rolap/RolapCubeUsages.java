@@ -16,7 +16,8 @@ import mondrian.olap.MondrianDef;
 /**
  * <code>RolapCubeUsages</code>
  * This provides us with the base cubes that a virtual cube uses and
- * specifies if unrelated dimensions to measures from these cubes should be ignored
+ * specifies if unrelated dimensions to measures from these cubes should be
+ * ignored.
  * @author ajoglekar
  * @since Nov 22 2007
  * @version $Id$
@@ -35,7 +36,7 @@ public class RolapCubeUsages {
         }
         for (MondrianDef.CubeUsage usage : cubeUsages.cubeUsages) {
             if(usage.cubeName.equals(baseCubeName)
-                    && Boolean.TRUE.equals(usage.ignoreUnrelatedDimensions)) {
+                && Boolean.TRUE.equals(usage.ignoreUnrelatedDimensions)) {
                 return true;
             }
         }
