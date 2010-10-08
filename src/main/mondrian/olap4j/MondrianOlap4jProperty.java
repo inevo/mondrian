@@ -41,12 +41,17 @@ class MondrianOlap4jProperty implements Property, Named {
             return Datatype.STRING;
         case TYPE_OTHER:
             return Datatype.VARIANT;
+        // -- BEGIN GeoMondrian modification --
+        case TYPE_GEOMETRY:
+            return Datatype.GEOMETRY;
+        // -- END GeoMondrian modification --
         default:
             throw new RuntimeException("unexpected: " + property.getType());
         }
     }
 
     public Set<TypeFlag> getType() {
+        property.isInternal();
         return property.isCellProperty()
             ? TypeFlag.CELL_TYPE_FLAG
             : TypeFlag.MEMBER_TYPE_FLAG;

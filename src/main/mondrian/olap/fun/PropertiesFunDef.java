@@ -27,12 +27,12 @@ class PropertiesFunDef extends FunDefBase {
     static final ResolverImpl Resolver = new ResolverImpl();
 
     public PropertiesFunDef(
-        String name,
-        String signature,
-        String description,
-        Syntax syntax,
-        int returnType,
-        int[] parameterTypes)
+            String name,
+            String signature,
+            String description,
+            Syntax syntax,
+            int returnType,
+            int[] parameterTypes)
     {
         super(name, signature, description, syntax, returnType, parameterTypes);
     }
@@ -59,8 +59,8 @@ class PropertiesFunDef extends FunDefBase {
         if (o == null) {
             if (!Util.isValidProperty(member, s)) {
                 throw new MondrianEvaluationException(
-                    "Property '" + s
-                    + "' is not valid for member '" + member + "'");
+                        "Property '" + s
+                                + "' is not valid for member '" + member + "'");
             }
         }
         return o;
@@ -72,30 +72,30 @@ class PropertiesFunDef extends FunDefBase {
     private static class ResolverImpl extends ResolverBase {
         private ResolverImpl() {
             super(
-                "Properties",
-                "<Member>.Properties(<String Expression>)",
-                "Returns the value of a member property.",
-                Syntax.Method);
+                    "Properties",
+                    "<Member>.Properties(<String Expression>)",
+                    "Returns the value of a member property.",
+                    Syntax.Method);
         }
 
         public FunDef resolve(
-            Exp[] args,
-            Validator validator,
-            List<Conversion> conversions)
+                Exp[] args,
+                Validator validator,
+                List<Conversion> conversions)
         {
             final int[] argTypes = new int[]{Category.Member, Category.String};
             final Exp propertyNameExp = args[1];
             final Exp memberExp = args[0];
             if ((args.length != 2)
-                || (memberExp.getCategory() != Category.Member)
-                || (propertyNameExp.getCategory() != Category.String))
+                    || (memberExp.getCategory() != Category.Member)
+                    || (propertyNameExp.getCategory() != Category.String))
             {
                 return null;
             }
             int returnType = deducePropertyCategory(memberExp, propertyNameExp);
             return new PropertiesFunDef(
-                getName(), getSignature(), getDescription(), getSyntax(),
-                returnType, argTypes);
+                    getName(), getSignature(), getDescription(), getSyntax(),
+                    returnType, argTypes);
         }
 
         /**
@@ -108,34 +108,38 @@ class PropertiesFunDef extends FunDefBase {
          * @return Category of the property
          */
         private int deducePropertyCategory(
-            Exp memberExp,
-            Exp propertyNameExp)
+                Exp memberExp,
+                Exp propertyNameExp)
         {
             if (!(propertyNameExp instanceof Literal)) {
                 return Category.Value;
             }
             String propertyName =
-                (String) ((Literal) propertyNameExp).getValue();
+                    (String) ((Literal) propertyNameExp).getValue();
             Hierarchy hierarchy = memberExp.getType().getHierarchy();
             if (hierarchy == null) {
                 return Category.Value;
             }
             Level[] levels = hierarchy.getLevels();
             Property property = lookupProperty(
-                levels[levels.length - 1], propertyName);
+                    levels[levels.length - 1], propertyName);
             if (property == null) {
                 // we'll likely get a runtime error
                 return Category.Value;
             } else {
                 switch (property.getType()) {
-                case TYPE_BOOLEAN:
-                    return Category.Logical;
-                case TYPE_NUMERIC:
-                    return Category.Numeric;
-                case TYPE_STRING:
-                    return Category.String;
-                default:
-                    throw Util.badValue(property.getType());
+                    case TYPE_BOOLEAN:
+                        return Category.Logical;
+                    case TYPE_NUMERIC:
+                        return Category.Numeric;
+                    case TYPE_STRING:
+                        return Category.String;
+                    // -- BEGIN GeoMondrian modification --
+                    case TYPE_GEOMETRY:
+                        return Category.Geometry;
+                    // -- END GeoMondrian modification --
+                    default:
+                        throw Util.badValue(property.getType());
                 }
             }
         }

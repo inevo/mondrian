@@ -828,7 +828,9 @@ Revision is $Id$
         <Attribute name="type" default="String">
             <Doc>
                 Data type of this property:
-                String, Numeric, Integer, Boolean, Date, Time or Timestamp.
+                <!-- BEGIN GeoMondrian modifications -->
+                String, Numeric, Integer, Boolean, Date, Time, Timestamp or Geometry.
+                <!-- END GeoMondrian modifications -->
             </Doc>
             <Value>String</Value>
             <Value>Numeric</Value>
@@ -837,6 +839,9 @@ Revision is $Id$
             <Value>Date</Value>
             <Value>Time</Value>
             <Value>Timestamp</Value>
+            <!-- BEGIN GeoMondrian modifications -->
+			<Value>Geometry</Value>
+			<!-- END GeoMondrian modifications -->
         </Attribute>
         <Attribute name="formatter" required="false">
             <Doc>

@@ -33,24 +33,26 @@ public class Category extends EnumeratedValues {
 
     private Category() {
         super(
-            new String[] {
-                "unknown", "array", "dimension", "hierarchy", "level",
-                "logical", "member", "numeric", "set",
-                "string", "tuple", "symbol", "cube", "value", "integer",
-                "null", "empty", "datetime",
-            },
-            new int[] {
-                Unknown, Array, Dimension, Hierarchy, Level,
-                Logical, Member, Numeric, Set,
-                String, Tuple, Symbol, Cube, Value, Integer,
-                Null, Empty, DateTime,
-            },
-            new String[] {
-                "Unknown", "Array", "Dimension", "Hierarchy", "Level",
-                "Logical Expression", "Member", "Numeric Expression", "Set",
-                "String", "Tuple", "Symbol", "Cube", "Value", "Integer",
-                "Null", "Empty", "DateTime",
-            }
+                // -- BEGIN GeoMondrian modification --
+                new String[] {
+                        "unknown", "array", "dimension", "hierarchy", "level",
+                        "logical", "member", "numeric", "set",
+                        "string", "tuple", "symbol", "cube", "value", "integer",
+                        "null", "empty", "datetime", "geometry",
+                },
+                new int[] {
+                        Unknown, Array, Dimension, Hierarchy, Level,
+                        Logical, Member, Numeric, Set,
+                        String, Tuple, Symbol, Cube, Value, Integer,
+                        Null, Empty, DateTime, Geometry,
+                },
+                new String[] {
+                        "Unknown", "Array", "Dimension", "Hierarchy", "Level",
+                        "Logical Expression", "Member", "Numeric Expression", "Set",
+                        "String", "Tuple", "Symbol", "Cube", "Value", "Integer",
+                        "Null", "Empty", "DateTime", "Geometry",
+                }
+                // -- END GeoMondrian modification --
         );
     }
 
@@ -160,6 +162,13 @@ public class Category extends EnumeratedValues {
      */
     public static final int DateTime  = 18;
 
+    // -- BEGIN GeoMondrian modification --
+    /**
+     * Represents a Geometry expression.
+     */
+    public static final int Geometry  = 19;
+    // -- END GeoMondrian modification --
+
     /**
      * <code>Expression</code> is a flag which, when bitwise-OR-ed with a
      * category value, indicates an expression (as opposed to a constant).
@@ -179,15 +188,18 @@ public class Category extends EnumeratedValues {
      */
     public static boolean isScalar(int category) {
         switch (category & Mask) {
-        case Value:
-        case Logical:
-        case Numeric:
-        case Integer:
-        case String:
-        case DateTime:
-            return true;
-        default:
-            return false;
+            case Value:
+            case Logical:
+            case Numeric:
+            case Integer:
+            case String:
+            case DateTime:
+                // -- BEGIN GeoMondrian modification --
+            case Geometry:
+                // -- END GeoMondrian modification --
+                return true;
+            default:
+                return false;
         }
     }
 }

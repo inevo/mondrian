@@ -27,9 +27,9 @@ import java.util.List;
 public class TypeUtil {
     public static Hierarchy typeToHierarchy(Type type) {
         if (type instanceof MemberType
-            || type instanceof LevelType
-            || type instanceof HierarchyType
-            || type instanceof DimensionType)
+                || type instanceof LevelType
+                || type instanceof HierarchyType
+                || type instanceof DimensionType)
         {
             return type.getHierarchy();
         } else {
@@ -83,8 +83,8 @@ public class TypeUtil {
         if (type instanceof MemberType) {
             return (MemberType) type;
         } else if (type instanceof DimensionType
-            || type instanceof HierarchyType
-            || type instanceof LevelType)
+                || type instanceof HierarchyType
+                || type instanceof LevelType)
         {
             return MemberType.forType(type);
         } else {
@@ -107,7 +107,7 @@ public class TypeUtil {
             if (type2 instanceof TupleType) {
                 TupleType tupleType2 = (TupleType) type2;
                 if (tupleType1.elementTypes.length
-                    == tupleType2.elementTypes.length)
+                        == tupleType2.elementTypes.length)
                 {
                     for (int i = 0; i < tupleType1.elementTypes.length; i++) {
                         if (!isUnionCompatible(
@@ -144,12 +144,12 @@ public class TypeUtil {
      * @return Whether hierarchies are equal
      */
     private static boolean equal(
-        final Hierarchy hierarchy1,
-        final Hierarchy hierarchy2)
+            final Hierarchy hierarchy1,
+            final Hierarchy hierarchy2)
     {
         return hierarchy1 == null
-            || hierarchy2 == null
-            || hierarchy2.getUniqueName().equals(
+                || hierarchy2 == null
+                || hierarchy2.getUniqueName().equals(
                 hierarchy1.getUniqueName());
     }
 
@@ -174,8 +174,8 @@ public class TypeUtil {
      */
     public static boolean canEvaluate(Type type) {
         return ! (type instanceof SetType
-                  || type instanceof CubeType
-                  || type instanceof LevelType);
+                || type instanceof CubeType
+                || type instanceof LevelType);
     }
 
     /**
@@ -190,8 +190,8 @@ public class TypeUtil {
 
     public static boolean couldBeMember(Type type) {
         return type instanceof MemberType
-            || type instanceof HierarchyType
-            || type instanceof DimensionType;
+                || type instanceof HierarchyType
+                || type instanceof DimensionType;
     }
 
     /**
@@ -223,6 +223,10 @@ public class TypeUtil {
             return Category.Symbol;
         } else if (type instanceof StringType) {
             return Category.String;
+            // -- BEGIN GeoMondrian modification --
+        } else if (type instanceof GeometryType) {
+            return Category.Geometry;
+            // -- END GeoMondrian modification --  
         } else if (type instanceof ScalarType) {
             return Category.Value;
         } else if (type instanceof SetType) {
@@ -246,8 +250,8 @@ public class TypeUtil {
      * @return Most general type which encompases all types
      */
     public static Type computeCommonType(
-        boolean allowConversions,
-        Type... types)
+            boolean allowConversions,
+            Type... types)
     {
         if (types.length == 0) {
             return null;
@@ -274,10 +278,10 @@ public class TypeUtil {
      * @return whether can convert from 'from' to 'to'
      */
     public static boolean canConvert(
-        int ordinal,
-        Type fromType,
-        int to,
-        List<Resolver.Conversion> conversions)
+            int ordinal,
+            Type fromType,
+            int to,
+            List<Resolver.Conversion> conversions)
     {
         final int from = typeToCategory(fromType);
         if (from == to) {
@@ -285,223 +289,234 @@ public class TypeUtil {
         }
         RuntimeException e = null;
         switch (from) {
-        case Category.Array:
-            return false;
-        case Category.Dimension:
-            // We can go from Dimension to Hierarchy if the dimension has a
-            // default hierarchy. From there, we can go to Member or Tuple.
-            // Even if the dimension does not have a default hierarchy, we claim
-            // now that we can do the conversion, to prevent other overloads
-            // from being chosen; we will hit an error either at compile time or
-            // at run time.
-            switch (to) {
-            case Category.Member:
-            case Category.Tuple:
+            case Category.Array:
+                return false;
+            case Category.Dimension:
+                // We can go from Dimension to Hierarchy if the dimension has a
+                // default hierarchy. From there, we can go to Member or Tuple.
+                // Even if the dimension does not have a default hierarchy, we claim
+                // now that we can do the conversion, to prevent other overloads
+                // from being chosen; we will hit an error either at compile time or
+                // at run time.
+                switch (to) {
+                    case Category.Member:
+                    case Category.Tuple:
+                    case Category.Hierarchy:
+                        // It is more difficult to convert dimension->hierarchy than
+                        // hierarchy->dimension
+                        conversions.add(new ConversionImpl(from, to, ordinal, 2, e));
+                        return true;
+                    case Category.Level:
+                        // It is more difficult to convert dimension->level than
+                        // dimension->member or dimension->hierarchy->member.
+                        conversions.add(new ConversionImpl(from, to, ordinal, 3, null));
+                        return true;
+                    default:
+                        return false;
+                }
             case Category.Hierarchy:
-                // It is more difficult to convert dimension->hierarchy than
-                // hierarchy->dimension
-                conversions.add(new ConversionImpl(from, to, ordinal, 2, e));
-                return true;
+                // Seems funny that you can 'downcast' from a hierarchy, doesn't
+                // it? But we add an implicit 'CurrentMember', for example,
+                // '[Product].PrevMember' actually means
+                // '[Product].CurrentMember.PrevMember'.
+                switch (to) {
+                    case Category.Dimension:
+                    case Category.Member:
+                    case Category.Tuple:
+                        conversions.add(new ConversionImpl(from, to, ordinal, 1, null));
+                        return true;
+                    default:
+                        return false;
+                }
             case Category.Level:
-                // It is more difficult to convert dimension->level than
-                // dimension->member or dimension->hierarchy->member.
-                conversions.add(new ConversionImpl(from, to, ordinal, 3, null));
-                return true;
-            default:
-                return false;
-            }
-        case Category.Hierarchy:
-            // Seems funny that you can 'downcast' from a hierarchy, doesn't
-            // it? But we add an implicit 'CurrentMember', for example,
-            // '[Product].PrevMember' actually means
-            // '[Product].CurrentMember.PrevMember'.
-            switch (to) {
-            case Category.Dimension:
-            case Category.Member:
-            case Category.Tuple:
-                conversions.add(new ConversionImpl(from, to, ordinal, 1, null));
-                return true;
-            default:
-                return false;
-            }
-        case Category.Level:
-            switch (to) {
-            case Category.Dimension:
-                // It's more difficult to convert to a dimension than a
-                // hierarchy. For example, we want '[Store City].CurrentMember'
-                // to resolve to <Hierarchy>.CurrentMember rather than
-                // <Dimension>.CurrentMember.
-                conversions.add(new ConversionImpl(from, to, ordinal, 2, null));
-                return true;
-            case Category.Hierarchy:
-                conversions.add(new ConversionImpl(from, to, ordinal, 1, null));
-                return true;
-            default:
-                return false;
-            }
-        case Category.Logical:
-            switch (to) {
-            case Category.Value:
-                return true;
-            default:
-                return false;
-            }
-        case Category.Member:
-            switch (to) {
-            case Category.Dimension:
-            case Category.Hierarchy:
-            case Category.Level:
-            case Category.Tuple:
-                conversions.add(new ConversionImpl(from, to, ordinal, 1, null));
-                return true;
-            case Category.Set:
-                // It is more expensive to convert from Member->Set (cost=2)
-                // than Member->Tuple (cost=1). In particular, m.Tuple(n) should
-                // resolve to <Tuple>.Item(<Numeric>) rather than
-                // <Set>.Item(<Numeric>).
-                conversions.add(new ConversionImpl(from, to, ordinal, 2, null));
-                return true;
-            case Category.Numeric:
-                // It is more expensive to convert from Member->Scalar (cost=3)
-                // than Member->Set (cost=2). In particular, we want 'member *
-                // set' to resolve to the crossjoin operator, '{m} * set'.
-                conversions.add(new ConversionImpl(from, to, ordinal, 3, null));
-                return true;
-            case Category.Value:
-            case Category.String:
-                // We assume that measures are numeric, so a cast to a string or
-                // general value expression is more expensive (cost=4) than a
-                // conversion to a numeric expression (cost=3).
-                conversions.add(new ConversionImpl(from, to, ordinal, 4, null));
-                return true;
-            default:
-                return false;
-            }
-        case Category.Numeric | Category.Constant:
-            switch (to) {
-            case Category.Value:
-            case Category.Numeric:
-                return true;
-            default:
-                return false;
-            }
-        case Category.Numeric:
-            switch (to) {
+                switch (to) {
+                    case Category.Dimension:
+                        // It's more difficult to convert to a dimension than a
+                        // hierarchy. For example, we want '[Store City].CurrentMember'
+                        // to resolve to <Hierarchy>.CurrentMember rather than
+                        // <Dimension>.CurrentMember.
+                        conversions.add(new ConversionImpl(from, to, ordinal, 2, null));
+                        return true;
+                    case Category.Hierarchy:
+                        conversions.add(new ConversionImpl(from, to, ordinal, 1, null));
+                        return true;
+                    default:
+                        return false;
+                }
             case Category.Logical:
-                conversions.add(new ConversionImpl(from, to, ordinal, 2, null));
-                return true;
-            case Category.Value:
+                switch (to) {
+                    case Category.Value:
+                        return true;
+                    default:
+                        return false;
+                }
+            case Category.Member:
+                switch (to) {
+                    case Category.Dimension:
+                    case Category.Hierarchy:
+                    case Category.Level:
+                    case Category.Tuple:
+                        conversions.add(new ConversionImpl(from, to, ordinal, 1, null));
+                        return true;
+                    case Category.Set:
+                        // It is more expensive to convert from Member->Set (cost=2)
+                        // than Member->Tuple (cost=1). In particular, m.Tuple(n) should
+                        // resolve to <Tuple>.Item(<Numeric>) rather than
+                        // <Set>.Item(<Numeric>).
+                        conversions.add(new ConversionImpl(from, to, ordinal, 2, null));
+                        return true;
+                    case Category.Numeric:
+                        // It is more expensive to convert from Member->Scalar (cost=3)
+                        // than Member->Set (cost=2). In particular, we want 'member *
+                        // set' to resolve to the crossjoin operator, '{m} * set'.
+                        conversions.add(new ConversionImpl(from, to, ordinal, 3, null));
+                        return true;
+                    case Category.Value:
+                    case Category.String:
+                        // We assume that measures are numeric, so a cast to a string or
+                        // general value expression is more expensive (cost=4) than a
+                        // conversion to a numeric expression (cost=3).
+                        conversions.add(new ConversionImpl(from, to, ordinal, 4, null));
+                        return true;
+                    default:
+                        return false;
+                }
+            case Category.Numeric | Category.Constant:
+                switch (to) {
+                    case Category.Value:
+                    case Category.Numeric:
+                        return true;
+                    default:
+                        return false;
+                }
+            case Category.Numeric:
+                switch (to) {
+                    case Category.Logical:
+                        conversions.add(new ConversionImpl(from, to, ordinal, 2, null));
+                        return true;
+                    case Category.Value:
+                    case Category.Integer:
+                    case (Category.Integer | Category.Constant):
+                    case (Category.Numeric | Category.Constant):
+                        return true;
+                    default:
+                        return false;
+                }
             case Category.Integer:
-            case (Category.Integer | Category.Constant):
-            case (Category.Numeric | Category.Constant):
-                return true;
-            default:
-                return false;
-            }
-        case Category.Integer:
-            switch (to) {
-            case Category.Value:
-            case (Category.Integer | Category.Constant):
-            case Category.Numeric:
-            case (Category.Numeric | Category.Constant):
-                return true;
-            default:
-                return false;
-            }
-        case Category.Set:
-            return false;
-        case Category.String | Category.Constant:
-            switch (to) {
-            case Category.Value:
-            case Category.String:
-                return true;
-            default:
-                return false;
-            }
-        case Category.String:
-            switch (to) {
-            case Category.Value:
-            case (Category.String | Category.Constant):
-                return true;
-            default:
-                return false;
-            }
-        case Category.DateTime | Category.Constant:
-            switch (to) {
-            case Category.Value:
-            case Category.DateTime:
-                return true;
-            default:
-                return false;
-            }
-        case Category.DateTime:
-            switch (to) {
-            case Category.Value:
-            case (Category.DateTime | Category.Constant):
-                return true;
-            default:
-                return false;
-            }
-        case Category.Tuple:
-            switch (to) {
+                switch (to) {
+                    case Category.Value:
+                    case (Category.Integer | Category.Constant):
+                    case Category.Numeric:
+                    case (Category.Numeric | Category.Constant):
+                        return true;
+                    default:
+                        return false;
+                }
             case Category.Set:
-                conversions.add(new ConversionImpl(from, to, ordinal, 2, null));
-                return true;
-            case Category.Numeric:
-                // It is more expensive to convert from Tuple->Scalar (cost=4)
-                // than Tuple->Set (cost=3). In particular, we want 'tuple *
-                // set' to resolve to the crossjoin operator, '{tuple} * set'.
-                // This is analogous to Member->Numeric conversion.
-                conversions.add(new ConversionImpl(from, to, ordinal, 3, null));
-                return true;
+                return false;
+            case Category.String | Category.Constant:
+                switch (to) {
+                    case Category.Value:
+                    case Category.String:
+                        return true;
+                    default:
+                        return false;
+                }
             case Category.String:
+                switch (to) {
+                    case Category.Value:
+                    case (Category.String | Category.Constant):
+                        return true;
+                    default:
+                        return false;
+                }
+            case Category.DateTime | Category.Constant:
+                switch (to) {
+                    case Category.Value:
+                    case Category.DateTime:
+                        return true;
+                    default:
+                        return false;
+                }
+            case Category.DateTime:
+                switch (to) {
+                    case Category.Value:
+                    case (Category.DateTime | Category.Constant):
+                        return true;
+                    default:
+                        return false;
+                }
+            case Category.Tuple:
+                switch (to) {
+                    case Category.Set:
+                        conversions.add(new ConversionImpl(from, to, ordinal, 2, null));
+                        return true;
+                    case Category.Numeric:
+                        // It is more expensive to convert from Tuple->Scalar (cost=4)
+                        // than Tuple->Set (cost=3). In particular, we want 'tuple *
+                        // set' to resolve to the crossjoin operator, '{tuple} * set'.
+                        // This is analogous to Member->Numeric conversion.
+                        conversions.add(new ConversionImpl(from, to, ordinal, 3, null));
+                        return true;
+                    case Category.String:
+                    case Category.Value:
+                        // We assume that measures are numeric, so a cast to a string or
+                        // general value expression is more expensive (cost=4) than a
+                        // conversion to a numeric expression (cost=3).
+                        conversions.add(new ConversionImpl(from, to, ordinal, 4, null));
+                        return true;
+                    default:
+                        return false;
+                }
             case Category.Value:
-                // We assume that measures are numeric, so a cast to a string or
-                // general value expression is more expensive (cost=4) than a
-                // conversion to a numeric expression (cost=3).
-                conversions.add(new ConversionImpl(from, to, ordinal, 4, null));
-                return true;
+                // We can implicitly cast from value to a more specific scalar type,
+                // but the cost is significant.
+                switch (to) {
+                    case Category.String:
+                    case Category.Numeric:
+                    case Category.Logical:
+                        conversions.add(new ConversionImpl(from, to, ordinal, 2, null));
+                        return true;
+                    default:
+                        return false;
+                }
+            case Category.Symbol:
+                return false;
+            case Category.Null:
+                // now null supports members as well as scalars; but scalar is
+                // preferred
+                if (Category.isScalar(to)) {
+                    return true;
+                } else if (to == Category.Member) {
+                    conversions.add(new ConversionImpl(from, to, ordinal, 2, null));
+                    return true;
+                } else {
+                    return false;
+                }
+            case Category.Empty:
+                return false;
+            // -- BEGIN GeoMondrian modification --
+            case Category.Geometry:
+                // TODO: is this correct?
+                return to == Category.Value ||
+                        to == (Category.Geometry | Category.Constant);
+            case Category.Geometry | Category.Constant:
+                // TODO: is this correct?
+                return to == Category.Value ||
+                        to == Category.Geometry;
+            // TODO: handle conversion to String (WKT)?
+            // -- END GeoMondrian modification --
             default:
-                return false;
-            }
-        case Category.Value:
-            // We can implicitly cast from value to a more specific scalar type,
-            // but the cost is significant.
-            switch (to) {
-            case Category.String:
-            case Category.Numeric:
-            case Category.Logical:
-                conversions.add(new ConversionImpl(from, to, ordinal, 2, null));
-                return true;
-            default:
-                return false;
-            }
-        case Category.Symbol:
-            return false;
-        case Category.Null:
-            // now null supports members as well as scalars; but scalar is
-            // preferred
-            if (Category.isScalar(to)) {
-                return true;
-            } else if (to == Category.Member) {
-                conversions.add(new ConversionImpl(from, to, ordinal, 2, null));
-                return true;
-            } else {
-                return false;
-            }
-        case Category.Empty:
-            return false;
-        default:
-            throw Util.newInternal(
-                "unknown category " + from + " for type " + fromType);
+                throw Util.newInternal(
+                        "unknown category " + from + " for type " + fromType);
         }
     }
 
     static <T> T neq(T t1, T t2) {
         return t1 == null  ? t2
-            : t2 == null ? t1
+                : t2 == null ? t1
                 : t1.equals(t2) ? t1
-                    : null;
+                : null;
     }
 
     /**
@@ -535,11 +550,11 @@ public class TypeUtil {
          * @param e Exception
          */
         public ConversionImpl(
-            int from,
-            int to,
-            int ordinal,
-            int cost,
-            RuntimeException e)
+                int from,
+                int to,
+                int ordinal,
+                int cost,
+                RuntimeException e)
         {
             this.from = from;
             this.to = to;
@@ -561,31 +576,31 @@ public class TypeUtil {
         public void apply(Validator validator, List<Exp> args) {
             final Exp arg = args.get(ordinal);
             switch (from) {
-            case Category.Member:
-            case Category.Tuple:
-                switch (to) {
-                case Category.Set:
-                    final Exp newArg =
-                        validator.validate(
-                            new UnresolvedFunCall(
-                                "{}", Syntax.Braces, new Exp[]{arg}), false);
-                    args.set(ordinal, newArg);
-                    break;
+                case Category.Member:
+                case Category.Tuple:
+                    switch (to) {
+                        case Category.Set:
+                            final Exp newArg =
+                                    validator.validate(
+                                            new UnresolvedFunCall(
+                                                    "{}", Syntax.Braces, new Exp[]{arg}), false);
+                            args.set(ordinal, newArg);
+                            break;
+                        default:
+                            // do nothing
+                    }
                 default:
                     // do nothing
-                }
-            default:
-                // do nothing
             }
         }
 
         // for debug
         public String toString() {
             return "Conversion(from=" + Category.instance().getName(from)
-                + ", to=" + Category.instance().getName(to)
-                + ", ordinal="
-                + ordinal + ", cost="
-                + cost + ", e=" + e + ")";
+                    + ", to=" + Category.instance().getName(to)
+                    + ", ordinal="
+                    + ordinal + ", cost="
+                    + cost + ", e=" + e + ")";
         }
     }
 }

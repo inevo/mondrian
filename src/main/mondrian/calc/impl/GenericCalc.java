@@ -13,6 +13,10 @@ import mondrian.olap.*;
 import mondrian.olap.fun.FunUtil;
 import mondrian.calc.*;
 
+// -- BEGIN GeoMondrian modification --
+import com.vividsolutions.jts.geom.Geometry;
+// -- END GeoMondrian modification --
+
 import java.util.*;
 
 /**
@@ -26,10 +30,13 @@ import java.util.*;
  * @since Sep 26, 2005
  */
 public abstract class GenericCalc
-    extends AbstractCalc
-    implements TupleCalc,
-    StringCalc, IntegerCalc, DoubleCalc, BooleanCalc, DateTimeCalc,
-    VoidCalc, MemberCalc, LevelCalc, HierarchyCalc, DimensionCalc
+        extends AbstractCalc
+        implements TupleCalc,
+        StringCalc, IntegerCalc, DoubleCalc, BooleanCalc, DateTimeCalc,
+        VoidCalc, MemberCalc, LevelCalc, HierarchyCalc, DimensionCalc
+        // -- BEGIN GeoMondrian modification --
+        , GeometryCalc
+        // -- END GeoMondrian modification
 {
     /**
      * Creates a GenericCalc without specifying child calculated expressions.
@@ -60,12 +67,18 @@ public abstract class GenericCalc
         return (String) evaluate(evaluator);
     }
 
+    // -- BEGIN GeoMondrian modification --
+    public Geometry evaluateGeometry(Evaluator evaluator) {
+        return (Geometry) evaluate(evaluator);
+    }
+    // -- END GeoMondrian modification --
+
     public int evaluateInteger(Evaluator evaluator) {
         Object o = evaluate(evaluator);
         final Number number = (Number) o;
         return number == null
-            ? FunUtil.IntegerNull
-            : number.intValue();
+                ? FunUtil.IntegerNull
+                : number.intValue();
     }
 
     public double evaluateDouble(Evaluator evaluator) {
@@ -76,8 +89,8 @@ public abstract class GenericCalc
 
     public static double numberToDouble(Number number) {
         return number == null
-            ? FunUtil.DoubleNull
-            : number.doubleValue();
+                ? FunUtil.DoubleNull
+                : number.doubleValue();
     }
 
     public boolean evaluateBoolean(Evaluator evaluator) {

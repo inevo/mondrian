@@ -15,7 +15,9 @@ import mondrian.olap.type.*;
 import mondrian.olap.type.DimensionType;
 import mondrian.olap.type.LevelType;
 import mondrian.calc.*;
-
+// -- BEGIN GeoMondrian modification --
+import com.vividsolutions.jts.geom.Geometry;
+// -- END GeoMondrian modification --
 /**
  * Calculator which always returns the same value.
  *
@@ -37,8 +39,8 @@ public class ConstantCalc extends GenericCalc {
 
     public ResultStyle getResultStyle() {
         return o == null
-            ? ResultStyle.VALUE
-            : ResultStyle.VALUE_NOT_NULL;
+                ? ResultStyle.VALUE
+                : ResultStyle.VALUE_NOT_NULL;
     }
 
     private double initializeDouble(Object o) {
@@ -126,6 +128,18 @@ public class ConstantCalc extends GenericCalc {
         return new ConstantCalc(new StringType(), s);
     }
 
+    // -- BEGIN GeoMondrian modification --
+    /**
+     * Creates an expression which evaluates to a given geometry.
+     *
+     * @param g Geometry value
+     * @return Constant geometry expression
+     */
+    public static GeometryCalc constantGeometry(Geometry s) {
+        return new ConstantCalc(new GeometryType(), s);
+    }
+    // -- END GeoMondrian modification --
+
     /**
      * Creates an expression which evaluates to a given boolean.
      *
@@ -154,8 +168,8 @@ public class ConstantCalc extends GenericCalc {
      */
     public static Calc constantMember(Member member) {
         return new ConstantCalc(
-            MemberType.forMember(member),
-            member);
+                MemberType.forMember(member),
+                member);
     }
 
     /**
@@ -166,8 +180,8 @@ public class ConstantCalc extends GenericCalc {
      */
     public static Calc constantLevel(Level level) {
         return new ConstantCalc(
-            LevelType.forLevel(level),
-            level);
+                LevelType.forLevel(level),
+                level);
     }
 
     /**
@@ -178,8 +192,8 @@ public class ConstantCalc extends GenericCalc {
      */
     public static Calc constantHierarchy(Hierarchy hierarchy) {
         return new ConstantCalc(
-            HierarchyType.forHierarchy(hierarchy),
-            hierarchy);
+                HierarchyType.forHierarchy(hierarchy),
+                hierarchy);
     }
 
     /**
@@ -190,8 +204,8 @@ public class ConstantCalc extends GenericCalc {
      */
     public static Calc constantDimension(Dimension dimension) {
         return new ConstantCalc(
-            DimensionType.forDimension(dimension),
-            dimension);
+                DimensionType.forDimension(dimension),
+                dimension);
     }
 }
 

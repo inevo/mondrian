@@ -384,6 +384,10 @@ public class RolapLevel extends LevelBase {
             return Property.Datatype.TYPE_NUMERIC;
         } else if (type.equals("Boolean")) {
             return Property.Datatype.TYPE_BOOLEAN;
+        // -- BEGIN GeoMondrian modification --
+        } else if (type.equals("Geometry")) {
+        	return Property.Datatype.TYPE_GEOMETRY;
+        // -- END GeoMondrian modification --
         } else {
             throw Util.newError("Unknown property type '" + type + "'");
         }

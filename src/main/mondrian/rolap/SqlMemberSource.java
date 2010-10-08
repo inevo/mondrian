@@ -22,6 +22,9 @@ import mondrian.rolap.agg.CellRequest;
 import mondrian.spi.Dialect;
 import mondrian.util.ObjectFactory;
 import mondrian.util.CreationException;
+// -- BEGIN GeoMondrian modification --
+import mondrian.rolap.geo.SpatialDatabaseUtil;
+// -- END GeoMondrian modification --
 
 import javax.sql.DataSource;
 import java.sql.*;
@@ -50,10 +53,19 @@ class SqlMemberSource
     private boolean assignOrderKeys;
     private Map<Object, Object> valuePool;
 
+    // -- BEGIN GeoMondrian modification --
+    private Dialect dialect;
+    // -- END GeoMondrian modification --
+
     SqlMemberSource(RolapHierarchy hierarchy) {
         this.hierarchy = hierarchy;
         this.dataSource =
             hierarchy.getRolapSchema().getInternalConnection().getDataSource();
+         // -- BEGIN GeoMondrian modification --
+        // NOTE: getDialect() is not cheap (see RolapSchema), should
+        // we modify RolapSchema to store the Dialect ?
+        this.dialect = hierarchy.getRolapSchema().getDialect();
+        // -- END GeoMondrian modification
         assignOrderKeys =
             MondrianProperties.instance().CompareSiblingsByOrderKey.get();
         valuePool = ValuePoolFactoryFactory.getValuePoolFactory().create(this);
@@ -362,9 +374,11 @@ RME is this right
                          * Presumably the value is already in the pool
                          * as a result of makeMember().
                          */
-                        member.setProperty(
-                            property.getName(),
+                        // -- BEGIN GeoMondrian modification --
+                        setMemberProperty(member, 
+                            property,
                             accessors.get(column).get());
+                        // -- END GeoMondrian modification --
                         column++;
                     }
                 }
@@ -1028,9 +1042,12 @@ RME is this right
         }
         for (int j = 0; j < properties.length; j++) {
             Property property = properties[j];
-            member.setProperty(
-                property.getName(),
+            // -- BEGIN GeoMondrian modification --
+            setMemberProperty(
+                member,
+                property,
                 getPooledValue(accessors.get(columnOffset + j).get()));
+            // -- END GeoMondrian modification --
         }
         cache.putMember(key, member);
         return member;
@@ -1419,6 +1436,67 @@ RME is this right
             return new NullValuePoolFactory();
         }
     }
+
+        // -- BEGIN GeoMondrian modification --
+    private void setMemberProperty(Member m, Property p, Object o) {
+        Object propObject = o;
+
+        if(p.getType() == Property.Datatype.TYPE_GEOMETRY) {
+
+            /*
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("Trying to convert geometry property " +
+                        p.getName() + " for member " + m.getName());
+            }
+            */
+            //                java.sql.Connection jdbcConn = dataSource.getConnection();
+            //                final SqlQuery.Dialect dialect = Dialect.create(jdbcConn.getMetaData());
+
+            // what kind of spatial DBMS do we have?
+
+            if(dialect.getDatabaseProduct() == Dialect.DatabaseProduct.POSTGRESQL) {
+                try{
+                    // do we have the PostGIS JDBC driver wrapper in classpath?
+                    Class.forName("org.postgis.PGgeometry");
+
+                    // if using the PostGIS JDBC driver wrapper, the object
+                    // should be of PGgeometry type
+                    if(o instanceof org.postgis.PGgeometry) {
+                        org.postgis.PGgeometry pgGeom = (org.postgis.PGgeometry) o;
+                        propObject = SpatialDatabaseUtil.PostGIStoJTS(pgGeom);
+                        if(propObject != null) {
+                            /*
+                            if (LOGGER.isDebugEnabled()) {
+                                LOGGER.debug("Successfully converted geometry" +
+                                        " property: " + propObject.toString());
+                            }*/
+                        }
+                        else {
+                            //LOGGER.warn("Geometry property is null after conversion");
+                        }
+                    }
+                    else {
+                        // not a PostGIS geometry ??
+                        //LOGGER.warn("Geometry property object not an " +"org.postgis.PGgeometry: " + o.toString());
+                    }
+                }
+                catch(ClassNotFoundException cnfe) {
+                    /* PostGIS not in classpath, can't convert the geometry
+                    LOGGER.warn("Could not process PostGIS geometry property; " + "PostGIS JDBC driver wrapper not in classpath");
+                    if (LOGGER.isDebugEnabled()) {
+                        LOGGER.debug("ClassNotFoundException stack trace", cnfe);
+                    }*/
+
+                }
+            }
+            else {
+                //LOGGER.warn("Unknown DBMS type for a geometry property");
+            }
+        }
+
+        m.setProperty(p.getName(), propObject);
+    }
+    // -- END GeoMondrian modification --
 }
 
 // End SqlMemberSource.java

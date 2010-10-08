@@ -1,0 +1,98 @@
+/* spatial calculated measure
+WITH MEMBER [Measures].[GeometrieUnion]
+	AS 'ST_UnionAgg([Unite geographique].CurrentMember.children, "geom")'
+SELECT 
+	{[Measures].[Population], [Measures].[GeometrieUnion]} on columns, 
+	{[Unite geographique].[Province].[Québec]} on rows 
+FROM [Recensements] 
+WHERE [Temps].[Rencensement 2001 (2001-2003)].[2001]
+*/
+
+
+WITH
+	MEMBER [Store].[Meat Markets] AS
+		'Aggregate(
+			Filter([Store].[Store Name].members,
+			[Store].CurrentMember.Properties("Meat Sqft") > 3000
+			)
+		)',
+		MeatRatio = [Store].CurrentMember.Properties("Meat Sqft") / [Store].CurrentMember.Properties("Store Sqft"),
+		SOLVE_ORDER = 1
+	MEMBER [Measures].[Meat Ratio] AS
+		'[Store].[Meat Markets].Properties("MeatRatio")'
+SELECT
+	{[Store].[Meat Markets]} on columns,
+	{[Measures].[Store Sales], [Measures].[Meat Ratio]} on rows
+FROM Sales
+
+/*
+// calculated member
+WITH MEMBER [Unite geographique].[Province].[Québec].[Alentours Quebec]
+	AS Aggregate(
+		Filter(
+			[Unite geographique].[Region economique].members,
+			ST_Distance([Unite geographique].CurrentMember.Properties("geom"), 
+			ST_GeomFromText("POINT (-71.2 46.8)")) < 1.0
+		)
+	), geom=ST_GeomFromText("POINT (-71.2 46.8)")
+SELECT 
+	{[Measures].[Population]} on columns, 
+	{
+		[Unite geographique].[Province].[Québec].children,
+		[Unite geographique].[All Unite geographiques].[Canada].[Centre].[Québec].[Alentours Quebec]
+	} on rows 
+FROM [Recensements] 
+WHERE [Temps].[Rencensement 2001 (2001-2003)].[2001]
+
+// wrong value type
+SELECT 
+	{[Measures].[Population]} on columns, 
+	Filter( 
+		{[Unite geographique].[Region economique].members}, 
+		ST_Distance([Unite geographique].CurrentMember.Properties("geom"), 
+			"POINT (-71.2 46.8)") < 2.0 
+	) on rows 
+FROM [Recensements] 
+WHERE [Temps].[Rencensement 2001 (2001-2003)].[2001]
+
+// ST_GeomFromText constructor
+SELECT 
+	{[Measures].[Population]} on columns, 
+	Filter( 
+		{[Unite geographique].[Region economique].members}, 
+		ST_Distance([Unite geographique].CurrentMember.Properties("geom"), 
+			ST_GeomFromText("POINT (-71.2 46.8)")) < 2.0 
+	) on rows 
+FROM [Recensements] 
+WHERE [Temps].[Rencensement 2001 (2001-2003)].[2001]
+
+// ST_Distance predicate
+SELECT 
+	{[Measures].[Population]} on columns, 
+	Filter(
+		{[Unite geographique].[Region economique].members}, 
+		ST_Distance([Unite geographique].CurrentMember.Properties("geom"), 
+			[Unite geographique].[Province].[Ontario].Properties("geom")) < 2.0
+	) on rows 
+FROM [Recensements] 
+WHERE [Temps].[Rencensement 2001 (2001-2003)].[2001]
+
+// ST_Within predicate
+SELECT 
+	{[Measures].[Population]} on columns, 
+	Filter( 
+		{[Unite geographique].[Region economique].members}, 
+			ST_Within([Unite geographique].CurrentMember.Properties("geom"), 
+			[Unite geographique].[Province].[Ontario].Properties("geom")) 
+	) on rows 
+FROM [Recensements] 
+WHERE [Temps].[Rencensement 2001 (2001-2003)].[2001]
+
+// simple query
+SELECT 
+	{[Measures].[Population]} on columns, 
+	{[Unite geographique].[Province].members} on rows 
+FROM [Recensements] 
+WHERE [Temps].[Rencensement 2001 (2001-2003)].[2001]
+
+*/

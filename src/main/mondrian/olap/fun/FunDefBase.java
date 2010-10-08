@@ -102,12 +102,12 @@ public abstract class FunDefBase extends FunUtil implements FunDef {
      *                       each parameter.
      */
     FunDefBase(
-        String name,
-        String signature,
-        String description,
-        Syntax syntax,
-        int returnCategory,
-        int[] parameterCategories)
+            String name,
+            String signature,
+            String description,
+            Syntax syntax,
+            int returnCategory,
+            int[] parameterCategories)
     {
         assert name != null;
         assert syntax != null;
@@ -137,17 +137,17 @@ public abstract class FunDefBase extends FunUtil implements FunDef {
      *                    {@link FunUtil#decodeParameterCategories(String)}.
      */
     protected FunDefBase(
-        String name,
-        String description,
-        String flags)
+            String name,
+            String description,
+            String flags)
     {
         this(
-            name,
-            null,
-            description,
-            decodeSyntacticType(flags),
-            decodeReturnCategory(flags),
-            decodeParameterCategories(flags));
+                name,
+                null,
+                description,
+                decodeSyntacticType(flags),
+                decodeReturnCategory(flags),
+                decodeParameterCategories(flags));
     }
 
     /**
@@ -174,18 +174,18 @@ public abstract class FunDefBase extends FunUtil implements FunDef {
      *                    {@link FunUtil#decodeParameterCategories(String)}.
      */
     protected FunDefBase(
-        String name,
-        String signature,
-        String description,
-        String flags)
+            String name,
+            String signature,
+            String description,
+            String flags)
     {
         this(
-            name,
-            signature,
-            description,
-            decodeSyntacticType(flags),
-            decodeReturnCategory(flags),
-            decodeParameterCategories(flags));
+                name,
+                signature,
+                description,
+                decodeSyntacticType(flags),
+                decodeReturnCategory(flags),
+                decodeParameterCategories(flags));
     }
 
     /**
@@ -197,12 +197,12 @@ public abstract class FunDefBase extends FunUtil implements FunDef {
      */
     FunDefBase(Resolver resolver, int returnType, int[] parameterTypes) {
         this(
-            resolver.getName(),
-            null,
-            null,
-            resolver.getSyntax(),
-            returnType,
-            parameterTypes);
+                resolver.getName(),
+                null,
+                null,
+                resolver.getSyntax(),
+                returnType,
+                parameterTypes);
     }
 
     /**
@@ -212,9 +212,9 @@ public abstract class FunDefBase extends FunUtil implements FunDef {
      */
     FunDefBase(FunDef funDef) {
         this(
-            funDef.getName(), funDef.getSignature(),
-            funDef.getDescription(), funDef.getSyntax(),
-            funDef.getReturnCategory(), funDef.getParameterCategories());
+                funDef.getName(), funDef.getSignature(),
+                funDef.getDescription(), funDef.getSyntax(),
+                funDef.getReturnCategory(), funDef.getParameterCategories());
     }
 
     public String getName() {
@@ -263,10 +263,10 @@ public abstract class FunDefBase extends FunUtil implements FunDef {
      * @return Validated argument
      */
     protected Exp validateArg(
-        Validator validator,
-        Exp[] args,
-        int i,
-        int category)
+            Validator validator,
+            Exp[] args,
+            int i,
+            int category)
     {
         return args[i];
     }
@@ -285,69 +285,73 @@ public abstract class FunDefBase extends FunUtil implements FunDef {
      */
     static Type castType(Type type, int category) {
         switch (category) {
-        case Category.Logical:
-            return new BooleanType();
-        case Category.Numeric:
-            return new NumericType();
-        case Category.Numeric | Category.Integer:
-            return new DecimalType(Integer.MAX_VALUE, 0);
-        case Category.String:
-            return new StringType();
-        case Category.DateTime:
-            return new DateTimeType();
-        case Category.Symbol:
-            return new SymbolType();
-        case Category.Value:
-            return new ScalarType();
-        case Category.Cube:
-            if (type instanceof Cube) {
-                return new CubeType((Cube) type);
-            }
-            return null;
-        case Category.Dimension:
-            if (type != null) {
-                return DimensionType.forType(type);
-            }
-            return null;
-        case Category.Hierarchy:
-            if (type != null) {
-                return HierarchyType.forType(type);
-            }
-            return null;
-        case Category.Level:
-            if (type != null) {
-                return LevelType.forType(type);
-            }
-            return null;
-        case Category.Member:
-            if (type != null) {
-                final MemberType memberType = TypeUtil.toMemberType(type);
-                if (memberType != null) {
-                    return memberType;
+            case Category.Logical:
+                return new BooleanType();
+            case Category.Numeric:
+                return new NumericType();
+            case Category.Numeric | Category.Integer:
+                return new DecimalType(Integer.MAX_VALUE, 0);
+            case Category.String:
+                return new StringType();
+            case Category.DateTime:
+                return new DateTimeType();
+            // -- BEGIN GeoMondrian modification --
+            case Category.Geometry:
+                return new GeometryType();
+            // -- END GeoMondrian modification --
+            case Category.Symbol:
+                return new SymbolType();
+            case Category.Value:
+                return new ScalarType();
+            case Category.Cube:
+                if (type instanceof Cube) {
+                    return new CubeType((Cube) type);
                 }
-            }
-            // Take a wild guess.
-            return MemberType.Unknown;
-        case Category.Tuple:
-            if (type != null) {
-                final Type memberType = TypeUtil.toMemberOrTupleType(type);
-                if (memberType != null) {
-                    return memberType;
+                return null;
+            case Category.Dimension:
+                if (type != null) {
+                    return DimensionType.forType(type);
                 }
-            }
-            return null;
-        case Category.Set:
-            if (type != null) {
-                final Type memberType = TypeUtil.toMemberOrTupleType(type);
-                if (memberType != null) {
-                    return new SetType(memberType);
+                return null;
+            case Category.Hierarchy:
+                if (type != null) {
+                    return HierarchyType.forType(type);
                 }
-            }
-            return null;
-        case Category.Empty:
-            return new EmptyType();
-        default:
-            throw Category.instance.badValue(category);
+                return null;
+            case Category.Level:
+                if (type != null) {
+                    return LevelType.forType(type);
+                }
+                return null;
+            case Category.Member:
+                if (type != null) {
+                    final MemberType memberType = TypeUtil.toMemberType(type);
+                    if (memberType != null) {
+                        return memberType;
+                    }
+                }
+                // Take a wild guess.
+                return MemberType.Unknown;
+            case Category.Tuple:
+                if (type != null) {
+                    final Type memberType = TypeUtil.toMemberOrTupleType(type);
+                    if (memberType != null) {
+                        return memberType;
+                    }
+                }
+                return null;
+            case Category.Set:
+                if (type != null) {
+                    final Type memberType = TypeUtil.toMemberOrTupleType(type);
+                    if (memberType != null) {
+                        return new SetType(memberType);
+                    }
+                }
+                return null;
+            case Category.Empty:
+                return new EmptyType();
+            default:
+                throw Category.instance.badValue(category);
         }
     }
 
@@ -377,28 +381,28 @@ public abstract class FunDefBase extends FunUtil implements FunDef {
      */
     public Type getResultType(Validator validator, Exp[] args) {
         Type firstArgType =
-            args.length > 0
-            ? args[0].getType()
-            : null;
+                args.length > 0
+                        ? args[0].getType()
+                        : null;
         Type type = castType(firstArgType, getReturnCategory());
         if (type != null) {
             return type;
         }
         throw Util.newInternal(
-            "Cannot deduce type of call to function '" + this.name + "'");
+                "Cannot deduce type of call to function '" + this.name + "'");
     }
 
     public Calc compileCall(ResolvedFunCall call, ExpCompiler compiler) {
         throw Util.newInternal(
-            "function '" + getSignature()
-            + "' has not been implemented");
+                "function '" + getSignature()
+                        + "' has not been implemented");
     }
 
     public String getSignature() {
         return getSyntax().getSignature(
-            getName(),
-            getReturnCategory(),
-            getParameterCategories());
+                getName(),
+                getReturnCategory(),
+                getParameterCategories());
     }
 
     public void unparse(Exp[] args, PrintWriter pw) {
